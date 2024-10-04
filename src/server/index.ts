@@ -14,13 +14,14 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 
 export const appRouter = router({
-    greeting: t.procedure.query((): {bye: string} => ({
-        bye: 'Hello tRPC!'
+    greeting: t.procedure.query((): { bye: string } => ({
+        bye: "Hello tRPC!",
     })),
-    
-    greetWithName: t.procedure.input(z.string()).mutation(async ({ input }) => {  
-        return { message: `Hello ${input}!` };  
-    }),  
+
+    greetWithName: t.procedure.input(z.string()).mutation(async ({ input }) => {
+        return { message: `Hello ${input}!` };
+    }),
 });
 
 export type AppRouter = typeof appRouter;
+
