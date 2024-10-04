@@ -1,19 +1,23 @@
 import React, { useState } from 'react';  
-import useSWR, { mutate } from 'swr';  
-import { trpcAstroClient } from '../client'; // Adjust the import based on your project structure  
+import useSWR from 'swr';  
+import { trpcAstroClient } from '../client'; 
 
 const GreetingComponent = () => {  
     const [name, setName] = useState('');  
     const [greeting, setGreeting] = useState('');  
-
-    // Using SWR to fetch a default greeting message  
     const { data, error } = useSWR('greeting', () => trpcAstroClient.greeting.query());  
 
-    // Handle button click to send the mutation  
+
+
     const handleGreet = async () => {  
-        const response = await trpcAstroClient.greetWithName.mutate(name);  
-        setGreeting(response.message); // Set the message returned from the server  
-        // Optionally, you can use `mutate` to revalidate any relevant SWR keys here.  
+        try {  
+            const response = await trpcAstroClient.greetWithName.mutate(name);  
+            setGreeting(response.message); 
+            setName('');  
+        } catch (err) {  
+            console.error("Error during mutation:", err);  
+            setGreeting("An error occurred during greeting.");  
+        }  
     };  
 
     if (error) return <div>Error loading greeting.</div>;  
@@ -22,7 +26,7 @@ const GreetingComponent = () => {
     return (  
         <div>  
             <div id="greetingDiv">  
-                {data.bye} {/* Displaying the default greeting */}  
+                {data.bye}  
             </div>  
             <input   
                 type="text"   
@@ -31,7 +35,7 @@ const GreetingComponent = () => {
                 placeholder="Enter your name"   
             />  
             <button onClick={handleGreet}>Greet Me!</button>  
-            {greeting && <div>{greeting}</div>} {/* Displaying the greeting response */}  
+            <div>{greeting}</div> 
         </div>  
     );  
 };  
