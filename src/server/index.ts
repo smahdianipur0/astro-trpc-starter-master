@@ -14,14 +14,23 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 
 export const appRouter = router({
-    greeting: t.procedure.query((): { bye: string } => ({
+    greeting: t.procedure.query(async (): { bye: string } => ({
         bye: "Hello tRPC!",
     })),
 
-    greetWithName: t.procedure.input(z.string()).mutation(async ({ input }) => {
-        return { message: `Hello ${input}!` };
-    }),
+greetWithName: t.procedure
+    .input(
+        z.object({
+            names: z.string(),
+        }),
+    )
+    .mutation(async ({ input }) => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return { message: `Hello ${input.names}!!` };
+    })
+
 });
+
 
 export type AppRouter = typeof appRouter;
 
