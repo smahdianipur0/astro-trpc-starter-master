@@ -1,43 +1,34 @@
 import React, { useState } from "react";  
-import useSWR from "swr";  
 import { trpcAstroClient } from "../client";  
+import useSWRMutation from 'swr/mutation';  
 
-const GreetingComponent = () => {  
-  const [name, setName] = useState("OldMate");
-  const [isLoading, setIsLoading] = useState(false); 
+function Profile() {  
+  const [name, setName] = useState("OldMate");  
 
-  const { data, error, mutate } = useSWR('hello', () =>   
-    trpcAstroClient.greetWithName.mutate({ names: name }),
-  );  
+  const updateUser = async (newData) => {  
+      const response = await trpcAstroClient.greetWithName.mutate({ names: newData });  
+      return response;  
+  };  
 
-  const handleSubmit = async () => {
-  setIsLoading(true);  
-    try {  
-      await mutate();  
-      setName("");
-    } catch (err) {  
-      console.error("Error during mutation:", err);  
-    } finally {
-       setIsLoading(false);
-    } 
-  }  
 
-  if (error) return <div>Error loading greeting.</div>;  
-  if (!data) return <div>Loading...</div>;  
+  const { data, error, trigger, isMutating } = useSWRMutation(name, updateUser);  
+
 
   return (  
     <div>  
-      <input  
-        type="text"  
-        value={name}  
-        onChange={(e) => setName(e.target.value)}  
-        placeholder="Enter your name"  
+      <input   
+        type="text"   
+        value={name}   
+        onChange={(e) => setName(e.target.value)}   
       />  
-      <button onClick={handleSubmit} disabled={isLoading || name === ""}>
-        {isLoading ? "Greeting..." : "Greet Me!"}  </button>
-      <div>{isLoading ? "Greeting..." : data.message}</div>
+      <button disabled={isMutating || name === ""}
+      onClick={async () => { await trigger(name); setName(""); }}>Greet
+        </button>
+      {error && <div>Error loading greeting.</div>}  
+      {isMutating && <div>Loading...</div>}  
+      {!isMutating && data && <div>{data.message}</div>}   
     </div>  
   );  
 }  
 
-export default GreetingComponent;
+export default Profile;  

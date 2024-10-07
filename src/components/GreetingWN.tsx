@@ -40,4 +40,4 @@ const GreetingComponent = () => {
     );  
 };  
 
-export default GreetingComponent; 
+export default GreetingComponent;
