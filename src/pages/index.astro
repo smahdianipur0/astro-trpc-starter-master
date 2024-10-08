@@ -1,9 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/Card.astro';
-import GreetingR from '../components/GreetingR';
-import GreetingWN from '../components/GreetingWN';
 import SWR from '../components/SWR';
+import SWRMutation from '../components/SWRMutation';
 
 ---
 
@@ -55,9 +54,8 @@ import SWR from '../components/SWR';
 			/>
 		</ul>
 
-		<GreetingR client:only="react"/>
-		<GreetingWN client:only="react"/>
 		<SWR client:only="react"/>
+		<SWRMutation client:only="react"/>
 
 
 
