@@ -27,10 +27,16 @@ const IDComponent = () => {
         const resolution = window.screen.width.toString();
         const { browser, os } = UAParser(navigator.userAgent);
         const dash = "-";
-        const generatedUserID = `${browser.name}${dash}${os.version}${dash}${resolution}${dash}${fetchedIP.query}`;
+        const generatedUserIDo = `${browser.name}${dash}${os.version}${dash}${resolution}${dash}${fetchedIP.query}`;
 
-        const response = await trpcAstroClient.greetWithName.mutate({
-            names: generatedUserID,
+        function replaceDotsWithDashes(input) {  
+            return input.replace(/\./g, '-');  
+        }
+
+        const generatedUserID = replaceDotsWithDashes(generatedUserIDo); 
+
+        const response = await trpcAstroClient.addUser.mutate({
+            id: generatedUserID,
         });
         return response;
     };

@@ -1,0 +1,17 @@
+{
+  "id": "mig_cs82c83kfaeiapv1mpeg",
+  "parentID": "mig_cs827q5rs2ehapi84n1g",
+  "checksum": "1:9083d10a07d5b75292cb2c1e8962cd69e21abbde2fe6c9417e2b29f977d1ac28",
+  "operations": [
+    {
+      "addColumn": {
+        "column": {
+          "name": "NumberOfVaults",
+          "type": "int",
+          "defaultValue": "0"
+        },
+        "table": "users"
+      }
+    }
+  ]
+}

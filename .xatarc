@@ -1,0 +1,6 @@
+{
+  "databaseURL": "https://smahdianipur-s-workspace-70bc58.eu-central-1.xata.sh/db/xata-database",
+  "codegen": {
+    "output": "src/xata.ts"
+  }
+}
