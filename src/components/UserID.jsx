@@ -1,29 +1,57 @@
-import React from "react";  
-import useSWR from "swr";  
-import {UAParser} from 'ua-parser-js'
+import React, { useState } from "react";
+import { trpcAstroClient } from "../client";
+import useSWRMutation from "swr/mutation";
+import { UAParser } from "ua-parser-js";
 
+const fetchIP = async (url) => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Network response was not ok");
+    return response.json();
+};
 
-const resolution = window.screen.width.toString();
-const { browser, cpu, device, os } = UAParser(navigator.userAgent);
-const dash = "-"
+const IDComponent = () => {
+    const {
+        trigger: triggerFetchIP,
+        data: IPAddress,
+        error: IPError,
+        isMutating: isGettingIP,
+    } = useSWRMutation("http://ip-api.com/json/", fetchIP);
 
-  
-const fetcher = (url) => fetch(url).then((response) => response.json());  
+    const handleButtonClick = async () => {
+        const fetchedIP = await triggerFetchIP();
 
+        if (IPError) {
+            return "Error loading IP address";
+        }
 
+        const resolution = window.screen.width.toString();
+        const { browser, os } = UAParser(navigator.userAgent);
+        const dash = "-";
+        const generatedUserID = `${browser.name}${dash}${os.version}${dash}${resolution}${dash}${fetchedIP.query}`;
 
-const GreetingComponent = () => {  
-    const { data, error } = useSWR('http://ip-api.com/json/', fetcher);
+        const response = await trpcAstroClient.greetWithName.mutate({
+            names: generatedUserID,
+        });
+        return response;
+    };
 
+    const { data, error, trigger, isMutating } = useSWRMutation(
+        "check id",
+        handleButtonClick,
+    );
 
-    if (error) return <div>Error loading IP address.</div>;  
-    if (!data) return <div>Loading...</div>;  
-    const userID = browser.name.concat(dash, os.version, dash, resolution, dash,data.query.toString());  
-    return (  
-        <div> 
-            <div>{userID}</div>  
-        </div>  
-    );  
-};  
+    return (
+        <div>
+            <button disabled={isMutating}
+                onClick={async () => {
+                    await trigger();
+                }}> What's my ID?
+            </button>
+            {error && <div>Error loading greeting.</div>}
+            {isMutating && <div>Loading...</div>}
+            {!isMutating && data && <div>{data.message}</div>}
+        </div>
+    );
+};
 
-export default GreetingComponent;
+export default IDComponent;
