@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Card from '../components/Card.astro';
 import SWR from '../components/SWR';
 import SWRMutation from '../components/SWRMutation';
+import UserID from '../components/UserID.jsx';
 
 ---
 
@@ -53,7 +54,7 @@ import SWRMutation from '../components/SWRMutation';
 				body="Supercharge your project with new frameworks and libraries."
 			/>
 		</ul>
-
+		<UserID client:only="react"/>
 		<SWR client:only="react"/>
 		<SWRMutation client:only="react"/>
 
