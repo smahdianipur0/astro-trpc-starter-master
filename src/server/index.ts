@@ -23,7 +23,7 @@ export const router = t.router;
 export const appRouter = router({
 
     greeting: t.procedure
-        .query(async (): { bye: string } => ({
+        .query(async  => ({
              bye: "Hello tRPC!",
         })),
 
@@ -39,6 +39,7 @@ export const appRouter = router({
             return { message: `Hello ${input.names}!!` };
         }),
 
+        
 addUser: t.procedure  
     .input(  
         z.object({  
@@ -49,13 +50,11 @@ addUser: t.procedure
         const existingUser = await xata.db.users.read(input.id);  
 
         if (existingUser) {  
-            // User exists, increment the NumberOfVaults  
             await xata.db.users.update(input.id, {  
-                NumberOfVaults: existingUser.NumberOfVaults + 1,  
+                NumberOfVaults: (existingUser.NumberOfVaults ?? 0) + 1,  
             });  
             return { message: `Incremented NumberOfVaults for ${input.id}!!` };  
         } else {  
-            // User does not exist, create a new user  
             await xata.db.users.create({  
                 id: input.id,  
                 NumberOfVaults: 1,  
@@ -63,7 +62,6 @@ addUser: t.procedure
             return { message: `Added ${input.id}!!` };  
         }  
     }),
-        
 
 });
 

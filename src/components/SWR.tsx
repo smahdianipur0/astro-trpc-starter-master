@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { trpcAstroClient } from "../client";
 import useSWR from "swr";
 

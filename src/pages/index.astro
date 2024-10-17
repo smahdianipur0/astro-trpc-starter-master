@@ -3,7 +3,9 @@ import Layout from '../layouts/Layout.astro';
 import Card from '../components/Card.astro';
 import SWR from '../components/SWR';
 import SWRMutation from '../components/SWRMutation';
-import UserID from '../components/UserID.jsx';
+import UserID from '../components/UserID.jsx'; 
+import SolidQuery from '../components/SolidQuery.jsx';
+import SolidMutate from '../components/SolidMutate.jsx';
 
 ---
 
@@ -54,9 +56,11 @@ import UserID from '../components/UserID.jsx';
 				body="Supercharge your project with new frameworks and libraries."
 			/>
 		</ul>
-		<UserID client:only="react"/>
+<!-- 		<UserID client:only="react"/>
 		<SWR client:only="react"/>
-		<SWRMutation client:only="react"/>
+		<SWRMutation client:only="react"/> -->
+		<SolidQuery client:only="solid-js"/>
+		<SolidMutate client:only="solid-js"/>
 
 
 

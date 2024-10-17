@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { trpcAstroClient } from "../client";
 import useSWRMutation from "swr/mutation";
 import { UAParser } from "ua-parser-js";

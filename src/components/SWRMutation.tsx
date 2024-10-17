@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { trpcAstroClient } from "../client";
 import useSWRMutation from "swr/mutation";
 
 function Profile() {
   const [name, setName] = useState("OldMate");
 
-  const updateUser = async (newData) => {
+  const updateUser =  async (newData: string) => {
     const response = await trpcAstroClient.greetWithName.mutate({
       names: newData,
     });
@@ -24,7 +24,7 @@ function Profile() {
       <button
         disabled={isMutating || name === ""}
         onClick={async () => {
-          await trigger(name);
+          await trigger();
           setName("");
         }}
       >
