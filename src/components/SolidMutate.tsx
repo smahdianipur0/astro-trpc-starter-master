@@ -1,37 +1,35 @@
-import { ErrorBoundary, Suspense, createEffect } from "solid-js";  
-import {  createMutation,  QueryClient, QueryClientProvider, } from "@tanstack/solid-query";  
-import { trpcAstroClient } from "../client";  
-import { createSignal } from "solid-js";  
-import { createRenderEffect } from "solid-js";
-import { Switch, Match, For } from 'solid-js'  
+import { createMutation,QueryClient,QueryClientProvider,} from "@tanstack/solid-query";
+import { trpcAstroClient } from "../client";
+import { createSignal, Switch, Match } from "solid-js";
 
-function Example() {  
-  const [name, setName] = createSignal("OldMate");  
+function Example() {
+  const [name, setName] = createSignal("OldMate");
 
-  const mutation = createMutation(() => ({  
-    mutationKey: ["TanStack Query"],  
-    mutationFn: async (newData) => {  
-      const response = await trpcAstroClient.greetWithName.mutate({  
-        names: newData, // Ensure this is what the backend expects  
-      });  
-      return response;  
-    },  
-  }));  
+  document.getElementById("comiunicate")!.addEventListener("input", (e) => {
+    if ((e!.target as HTMLInputElement).matches("#inputName")) {
+      const value = (e!.target as HTMLInputElement).value;
+      setName(value.toString());
+    }
+  });
 
-  function model(el, accessor) {  
-    const [s, set] = accessor();  
-    el.addEventListener("input", (e) => set(e.currentTarget.value));  
-    createRenderEffect(() => el.value = s());   
-  }  
+  document.getElementById("comiunicate")!.addEventListener("click", (e) => {
+    if ((e!.target as HTMLInputElement).matches("#sendName")) {
+      mutation.mutate(name());
+    }
+  });
 
-  return (  
-    <div>  
-      <input use:model={[name, setName]} />  
-      <button type="button"   
-        onClick={(e) => mutation.mutate(name())} // <- Access the value here  
-      >  
-        Greet  
-      </button>  
+  const mutation = createMutation(() => ({
+    mutationKey: ["TanStack Query"],
+    mutationFn: async (newData) => {
+      const response = await trpcAstroClient.greetWithName.mutate({
+        names: newData,
+      });
+      return response;
+    },
+  }));
+
+  return (
+    <div>
       <Switch>
         <Match when={mutation.isPending}>
           <div>Loading...</div>
@@ -43,19 +41,18 @@ function Example() {
           <div>{mutation.data?.message}</div>
         </Match>
       </Switch>
+    </div>
+  );
+}
 
-    </div>  
-  );  
-}  
+const client = new QueryClient();
 
-const client = new QueryClient();  
-
-function App() {  
-  return (  
-    <QueryClientProvider client={client}>  
-      <Example />  
-    </QueryClientProvider>  
-  );  
-}  
+function App() {
+  return (
+    <QueryClientProvider client={client}>
+      <Example />
+    </QueryClientProvider>
+  );
+}
 
 export default App;
