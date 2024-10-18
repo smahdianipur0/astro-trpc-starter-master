@@ -1,3 +1,5 @@
+
+
 import { useState } from "react";
 import { trpcAstroClient } from "../client";
 import useSWR from "swr";
@@ -19,3 +21,4 @@ const GreetingComponent = () => {
 };
 
 export default GreetingComponent;
+

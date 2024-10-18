@@ -1,3 +1,5 @@
+
+
 import { useState } from "react";
 import { trpcAstroClient } from "../client";
 import useSWRMutation from "swr/mutation";
@@ -22,13 +24,12 @@ function Profile() {
         onChange={(e) => setName(e.target.value)}
       />
       <button
-        disabled={isMutating || name === ""}
+        // disabled={isMutating || name === ""}
         onClick={async () => {
           await trigger();
-          setName("");
+          // setName("");
         }}
-      >
-        Greet
+      >Greet
       </button>
       {error && <div>Error loading greeting.</div>}
       {isMutating && <div>Loading...</div>}
@@ -38,3 +39,4 @@ function Profile() {
 }
 
 export default Profile;
+

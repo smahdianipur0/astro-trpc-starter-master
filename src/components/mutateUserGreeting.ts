@@ -16,7 +16,7 @@ const mutateUserGreeting = async (name) => {
     const key = `greeting-${name}`;  
     
     // Use cacheUtil.cacheFirst method  
-    const response = await cacheUtil.cacheFirst(key, async () => {  
+    const response = await cacheUtil.swr(key, async () => {  
         // Make the API call  
         const result = await trpcAstroClient.greetWithName.mutate({  
             names: name,  
