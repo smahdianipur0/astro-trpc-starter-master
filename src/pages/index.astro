@@ -61,9 +61,20 @@ import SolidMutate from '../components/SolidMutate.jsx';
 		<SWRMutation client:only="react"/> -->
 		<div id="comiunicate" >
 		<SolidQuery client:only="solid-js"/>
-		<input type="text" name="names" id="inputName">
+<!-- 		<input type="text" name="names" id="inputName">
 		<button id="sendName" >Greet Me!</button>
-		<SolidMutate client:only="solid-js"/>
+		<SolidMutate client:only="solid-js"/> -->
+
+		<div>from pain TS </div>
+
+		<button id="saybye">say bye</button>
+		<div id="byebye">hi</div>
+
+		<input type="text" name="names" id="inputNameTs">
+		<button id="sayname">say hi</button>
+		<div id="greetingMessage" ></div>
+
+		
 
 		</div>
 
@@ -71,6 +82,9 @@ import SolidMutate from '../components/SolidMutate.jsx';
 
 	</main>
 </Layout>
+
+<script src="../components/displayGreeting.ts"></script>
+<script src="../components/mutateUserGreeting.ts"></script> 
 
 <style>
 	main {
