@@ -29,15 +29,19 @@ export const appRouter = router({
 
 
     greetWithName: t.procedure
-        .input(
-            z.object({
-                names: z.string(),
-            }),
-        )
-        .mutation(async ({ input }) => {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            return { message: `Hello ${input.names}!!` };
-        }),
+    .input(  
+        z.object({  
+            names: z.string(),  
+        }),  
+    )  
+    .mutation(async ({ input }) => {  
+        if (input.names === "OldMate") {  // Change from input.name to input.names  
+            return { message: `Hello!!` };  
+        } else {  
+            await new Promise(resolve => setTimeout(resolve, 2000));  
+            return { message: `Hello ${input.names}!!` };  
+        }  
+    }),  
 
         
 addUser: t.procedure  

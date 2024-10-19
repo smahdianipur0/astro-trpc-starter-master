@@ -1,5 +1,3 @@
-
-
 import { useState } from "react";
 import { trpcAstroClient } from "../client";
 import useSWRMutation from "swr/mutation";
@@ -39,4 +37,3 @@ function Profile() {
 }
 
 export default Profile;
-
