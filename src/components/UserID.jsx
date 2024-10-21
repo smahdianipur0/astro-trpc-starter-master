@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { trpcAstroClient } from "../client";
+import { trpc } from "../utils/trpc";
 import useSWRMutation from "swr/mutation";
 import { UAParser } from "ua-parser-js";
 
@@ -35,7 +35,7 @@ const IDComponent = () => {
 
         const generatedUserID = replaceDotsWithDashes(generatedUserIDo); 
 
-        const response = await trpcAstroClient.addUser.mutate({
+        const response = await trpc.addUser.mutate({
             id: generatedUserID,
         });
         return response;

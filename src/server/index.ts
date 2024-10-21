@@ -1,6 +1,6 @@
 import {initTRPC} from "@trpc/server";
 import superjson from 'superjson';
-import type {Context} from "../trpc-common/context.ts";
+import type {Context} from "./context.ts";
 import { z } from 'zod';
 import { XataClient } from '../xata';
 
@@ -38,7 +38,7 @@ export const appRouter = router({
         if (input.names === "OldMate") {  // Change from input.name to input.names  
             return { message: `Hello!!` };  
         } else {  
-            await new Promise(resolve => setTimeout(resolve, 2000));  
+            await new Promise(resolve => setTimeout(resolve, 3000));  
             return { message: `Hello ${input.names}!!` };  
         }  
     }),  

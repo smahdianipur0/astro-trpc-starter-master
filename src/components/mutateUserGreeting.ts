@@ -1,5 +1,5 @@
-import { trpcAstroClient } from "../client";  
-import cacheUtil from '../components/cacheUtil.ts'; 
+import { trpc } from "../utils/trpc";  
+import cacheUtil from '../utils/swr.ts'; 
 import { createSignal, Switch, Match } from "solid-js";
 
 const [name, setName] = createSignal("OldMate");
@@ -14,7 +14,7 @@ document.getElementById("comiunicate")!.addEventListener("input", (e) => {
 const mutateUserGreeting = async (name) => {  
     const key = `greeting`; 
     const response = await cacheUtil.networkFirst(key, async () => {  
-        const result = await trpcAstroClient.greetWithName.mutate({  
+        const result = await trpc.greetWithName.mutate({  
             names: name,  
         });  
         return result;
@@ -32,7 +32,8 @@ const greetUser = async (name) => {
 
     } catch (error) {  
         
-        document.getElementById("greetingMessage").textContent = "Error loading greeting.";  
+        document.getElementById("greetingMessage").textContent = "Error loading greeting.";
+        console.log(error)  
     }  
 };  
 

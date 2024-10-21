@@ -8,7 +8,7 @@ type RouterOutput = inferRouterOutputs<AppRouter>;
 
 
 
-const trpcAstroClient = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
     links: [
         httpBatchLink({
             url: '/api/trpc',
@@ -20,4 +20,4 @@ const trpcAstroClient = createTRPCClient<AppRouter>({
     ],
 });
 
-export {trpcAstroClient};
+export {trpc};

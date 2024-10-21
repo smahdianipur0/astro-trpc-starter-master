@@ -1,5 +1,5 @@
 import { createMutation,QueryClient,QueryClientProvider,} from "@tanstack/solid-query";
-import { trpcAstroClient } from "../client";
+import { trpc } from "../utils/trpc";
 import { createSignal, Switch, Match } from "solid-js";
 
 function Example() {
@@ -21,7 +21,7 @@ function Example() {
   const mutation = createMutation(() => ({
     mutationKey: ["TanStack Query"],
     mutationFn: async (newData) => {
-      const response = await trpcAstroClient.greetWithName.mutate({
+      const response = await trpc.greetWithName.mutate({
         names: newData,
       });
       return response;

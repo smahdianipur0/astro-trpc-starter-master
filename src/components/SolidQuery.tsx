@@ -1,12 +1,12 @@
 import {  createQuery,  QueryClient, QueryClientProvider} from '@tanstack/solid-query';  
-import { trpcAstroClient } from "../client"; 
+import { trpc } from "../utils/trpc"; 
 import { Switch, Match } from 'solid-js'
 
 function Example() {  
   const helloQuery = createQuery(() => ({  
     queryKey: ['TanStack Query'],  
     queryFn: async () => {  
-      const result = await trpcAstroClient.greeting.query();    
+      const result = await trpc.greeting.query();    
       return result;  
     },  
   }));  

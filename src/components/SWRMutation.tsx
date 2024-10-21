@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { trpcAstroClient } from "../client";
+import { trpc } from "../utils/trpc";
 import useSWRMutation from "swr/mutation";
 
 function Profile() {
   const [name, setName] = useState("OldMate");
 
   const updateUser =  async (newData: string) => {
-    const response = await trpcAstroClient.greetWithName.mutate({
+    const response = await trpc.greetWithName.mutate({
       names: newData,
     });
     return response;

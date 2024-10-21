@@ -1,12 +1,12 @@
-import { trpcAstroClient } from "../client";  
-import cacheUtil from '../components/cacheUtil.ts'; 
+import { trpc } from "../utils/trpc";  
+import cacheUtil from '../utils/swr.ts'; 
 
 
 const displayGreeting = async () => {  
     try {  
         document.getElementById("byebye").textContent = "Loading..."
         const data = await cacheUtil.swr("greeting", async () => {  
-            return await trpcAstroClient.greeting.query();  
+            return await trpc.greeting.query();  
         });  
 
         if (data && data.bye) {  

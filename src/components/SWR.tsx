@@ -1,13 +1,13 @@
 
 
 import { useState } from "react";
-import { trpcAstroClient } from "../client";
+import { trpc } from "../utils/trpc";
 import useSWR from "swr";
 
 
 const GreetingComponent = () => {
     const { data, error } = useSWR("greeting", () =>
-        trpcAstroClient.greeting.query(),
+        trpc.greeting.query(),
     );
 
     if (error) return <div>Error loading greeting.</div>;
