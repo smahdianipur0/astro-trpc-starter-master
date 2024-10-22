@@ -1,3 +1,5 @@
+
+
 import { type Arguments as CacheKey, serialize, createCacheHelper } from 'swr/_internal';  
 import { SWRConfig } from 'swr';  
 
@@ -15,39 +17,34 @@ function createCacheHelperV2<Data>(_k: CacheKey) {
   };
 }
 
-const cacheUtil = {  
-  
-  currentController: null, 
-  currentRequestId: 0,   
+const swr = {
+  requestControllers: new Map<string, AbortController>(),
+  requestIds: new Map<string, number>(),
 
-  async networkFirst<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>): Promise<Data> {
-   
-    const requestId = ++this.currentRequestId;  
-    if (this.currentController) {  this.currentController.abort(); }  
-    this.currentController = new AbortController(); 
+  async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>): Promise<Data> {
+    const requestId = (this.requestIds.get(key) || 0) + 1;
+    this.requestIds.set(key, requestId);
 
-    const { cache, setCache } = createCacheHelperV2<Data>(key);  
-    try {  
-      const res = await fetcher(key, this.currentController.signal);  
-      if (requestId === this.currentRequestId) {  
-        setCache(res);  
-      } 
-      return requestId === this.currentRequestId ? res : cache ?? Promise.reject(new Error('Outdated response'));  
-    } catch (e) {   
-      if (e.name === 'AbortError') {  
-        return cache ?? Promise.reject(new Error('Request was aborted and no cache is available'));  
-      } 
-      if (cache) {  
-        return cache;  
-      } else {  
-        throw e;  
-      }  
-    } finally {   
-      this.currentController = null;  
-    }  
+    if (this.requestControllers.has(key)) {
+      this.requestControllers.get(key)?.abort();
+    }
+    const controller = new AbortController();
+    this.requestControllers.set(key, controller);
+
+    try {
+      const res = await fetcher(key as K, controller.signal);
+      if (requestId === this.requestIds.get(key)) {
+        return res;
+      } else {
+        throw new Error("stale");
+      }
+    } finally {
+      this.requestControllers.delete(key);
+    }
   },
 
-  async swr<K extends CacheKey, Data>(key: K, fetcher: (v: K) => Promise<Data>): Promise<Data> {
+
+  async swrFetch<K extends CacheKey, Data>(key: K, fetcher: (v: K) => Promise<Data>): Promise<Data> {
     const { cache, setCache } = createCacheHelperV2<Data>(key);
 
     const fetchPromise = fetcher(key).then(res => {
@@ -59,4 +56,5 @@ const cacheUtil = {
   },
 };  
 
-export default cacheUtil;
+export default swr;
+
