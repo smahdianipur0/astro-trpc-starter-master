@@ -1,5 +1,9 @@
+<div id="byebye">Loading...</div>
+
+<script>
+
 import { trpc } from "../utils/trpc";
-import swr from "../utils/swr.ts";
+import swr from "../utils/swr";
 
 async function helloFunc() {
   return await swr.swrFetch("hello", async () => trpc.greeting.query());
@@ -15,3 +19,4 @@ const helloHandler = async () => {
 };
 
 helloHandler();
+</script>

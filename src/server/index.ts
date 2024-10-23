@@ -23,9 +23,10 @@ export const router = t.router;
 export const appRouter = router({
 
     greeting: t.procedure
-        .query(async  => ({
-             bye: "Hello tRPC!",
-        })),
+      .query(async () => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return { bye: "Hello tRPC!!" };
+      }),
 
 
     greetWithName: t.procedure
@@ -38,7 +39,7 @@ export const appRouter = router({
         if (input.names === "OldMate") {  // Change from input.name to input.names  
             return { message: `Hello!!` };  
         } else {  
-            await new Promise(resolve => setTimeout(resolve, 3000));  
+            await new Promise(resolve => setTimeout(resolve, 2000));  
             return { message: `Hello ${input.names}!!` };  
         }  
     }),  

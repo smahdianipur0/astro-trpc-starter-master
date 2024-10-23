@@ -1,5 +1,3 @@
-
-
 import { type Arguments as CacheKey, serialize, createCacheHelper } from 'swr/_internal';  
 import { SWRConfig } from 'swr';  
 
@@ -18,10 +16,11 @@ function createCacheHelperV2<Data>(_k: CacheKey) {
 }
 
 const swr = {
+
   requestControllers: new Map<string, AbortController>(),
   requestIds: new Map<string, number>(),
 
-  async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>): Promise<Data> {
+  async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>): Promise<[Data | undefined, Error | undefined]> {
     const requestId = (this.requestIds.get(key) || 0) + 1;
     this.requestIds.set(key, requestId);
 
@@ -34,27 +33,32 @@ const swr = {
     try {
       const res = await fetcher(key as K, controller.signal);
       if (requestId === this.requestIds.get(key)) {
-        return res;
+        return [res, undefined];
       } else {
-        throw new Error("stale");
+        return ["", undefined];
       }
+    } catch (error) {
+      return [undefined, error];
     } finally {
       this.requestControllers.delete(key);
     }
   },
 
-
-  async swrFetch<K extends CacheKey, Data>(key: K, fetcher: (v: K) => Promise<Data>): Promise<Data> {
+  async swrFetch<K extends CacheKey, Data>(key: K, fetcher: (v: K) => Promise<Data>): Promise<[Data | undefined, Error | undefined]> {
     const { cache, setCache } = createCacheHelperV2<Data>(key);
 
-    const fetchPromise = fetcher(key).then(res => {
-      setCache(res);
-      return res;
-    });
+    try {
+      const fetchPromise = fetcher(key).then(res => {
+        setCache(res);
+        return res;
+      });
 
-    return cache || (await fetchPromise);
+      const data = await fetchPromise;
+      return [data, undefined];
+    } catch (error) {
+      return [undefined, error];
+    }
   },
 };  
 
 export default swr;
-

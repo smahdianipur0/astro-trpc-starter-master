@@ -1,5 +1,11 @@
+<input type="text" name="names" id="inputNameTs">
+<button id="sayname">say hi</button>
+<div id="greetingMessage" ></div>
+
+<script>
+
 import { trpc } from "../utils/trpc";  
-import swr from '../utils/swr.ts'; 
+import swr from '../utils/swr'; 
 import { createSignal } from "solid-js";
 
 const [name, setName] = createSignal("OldMate");
@@ -32,3 +38,5 @@ document.getElementById("comiunicate")!.addEventListener("click", (e) => {
         greetingHandler(name());
     }
 });
+
+</script>
