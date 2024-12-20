@@ -24,7 +24,7 @@ export const appRouter = router({
 
     greeting: t.procedure
       .query(async () => {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 15000));
         return { bye: "Hello tRPC!" };
       }),
 
@@ -36,7 +36,7 @@ export const appRouter = router({
         }),  
     )  
     .mutation(async ({ input }) => {  
-        if (input.names === "OldMate") {  // Change from input.name to input.names  
+        if (input.names === "OldMate") {  
             return { message: `Hello!!` };  
         } else {  
             await new Promise(resolve => setTimeout(resolve, 2000));  

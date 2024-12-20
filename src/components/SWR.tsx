@@ -5,15 +5,15 @@ import useSWR from "swr";
 
 const GreetingComponent = () => {
     const { data, error } = useSWR("greeting", () =>
-        trpc.greeting.query(),
+        fetch('https://dummyapi.online/api/pokemon/2').then(res => res.json()),
     );
 
-    if (error) return <div>Error loading greeting.</div>;
+    if (error) return <div>Error loading.</div>;
     if (!data) return <div>Loading...</div>;
 
     return (
         <div>
-            <div> {data.bye} </div>
+            <div> {data.pokemon} </div>
         </div>
     );
 };

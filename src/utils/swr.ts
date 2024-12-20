@@ -19,6 +19,7 @@ const swr = {
 
   requestControllers: new Map<string, AbortController>(),
   requestIds: new Map<string, number>(),
+  cleanupFunctions: new Map<string, () => void>(),
 
   async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>): Promise<[Data | undefined, Error | undefined]> {
     const requestId = (this.requestIds.get(key as string) || 0) + 1;
@@ -44,54 +45,52 @@ const swr = {
     }
   },
 
-  async swrFetch<K extends CacheKey, Data>(
-    key: K, 
-    fetcher: (v: K) => Promise<Data>,
+  async swrFetch<K extends CacheKey, Data>(key: K, fetcher: (v: K) => Promise<Data>,
     options: { autoRefresh?: boolean } = { autoRefresh: true }
   ): Promise<[Data | undefined, Error | undefined]> {  
     const { cache, setCache } = createCacheHelperV2<Data>(key);  
-  
-    const fetchWithTimeout = async (): Promise<Data> => {
-      const response = await Promise.race([
+
+    const requestId = (this.requestIds.get(key as string) || 0) + 1;
+    this.requestIds.set(key as string, requestId);
+
+    const fetchWithTimeout = async (): Promise<Data> => 
+      Promise.race([
         fetcher(key),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Request timed out')), 10000)
         )
       ]);
-      return response;
-    };
-  
+
     const fetchAndUpdate = async (): Promise<[Data | undefined, Error | undefined]> => {
       let lastError: Error | undefined;
-      
-      for (let attempt = 0; attempt < 2; attempt++) {
+
+      for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const data = await fetchWithTimeout();
-          setCache(data);
-          return [data, undefined];
+          if (requestId === this.requestIds.get(key as string)) {
+            setCache(data);
+            return [data, undefined];
+          }
         } catch (error) {
           lastError = error as Error;
-          
-          if (!(lastError.message === 'Network request failed' ||
-                lastError.message === 'Failed to fetch')) {
-            break;
+
+          if (attempt === 2 || 
+              !(error instanceof Error && (error.message === 'Network request failed' || error.message === 'Failed to fetch'))) {
+            return [undefined, lastError];
           }
-  
-          if (attempt < 1) {
-            await new Promise(resolve => setTimeout(resolve, 0));
-          }
+
+          this.requestIds.set(key as string, requestId + 1);
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
-  
       return [undefined, lastError];
     };
-  
+
     if (options.autoRefresh) {
-      this.onFocus(() => {
-        fetchAndUpdate();
-      });
+      const cleanup = this.onFocus(fetchAndUpdate);
+      this.cleanupFunctions.set(key as string, cleanup);
     }
-  
+
     return cache ? [cache, undefined] as [Data, undefined] : await fetchAndUpdate();
   },
 
@@ -113,6 +112,14 @@ const swr = {
       document.removeEventListener('visibilitychange', visibilityHandler);
       window.removeEventListener('focus', focusHandler);
     };
+  },
+
+  cleanup(key: string) {
+    const cleanupFunction = this.cleanupFunctions.get(key);
+    if (cleanupFunction) {
+      cleanupFunction();
+      this.cleanupFunctions.delete(key);
+    }
   }
 };  
 
