@@ -1,17 +1,20 @@
 <div id="dummy">Loading...</div>
 
 <script>
+import { createEffect } from 'solid-js';
 import swr from "../utils/swr";
 
-const dummyFunc = () => swr.swrFetch("dummy", () => 
-  fetch('https://dummyapi.online/api/pokemon/2').then(res => res.json())
+const [dataSignal, errorSignal] = await swr.swrFetch("dummy", () => 
+  fetch('https://dummyapi.online/api/pokemon/4').then(res => res.json())
 );
-
-const [data, error] = await dummyFunc();
 
 // if needed
 // swr.cleanup("dummy"); 
 
-document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message ?? "Unspected Eroor";
-
+createEffect(() => {
+  const dummyElement = document.getElementById("dummy") as HTMLElement | null;
+  if (dummyElement) {
+    dummyElement.textContent = dataSignal()?.pokemon ?? errorSignal()?.message;
+  }
+});
 </script>
