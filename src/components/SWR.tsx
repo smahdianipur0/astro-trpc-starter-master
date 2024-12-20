@@ -1,6 +1,4 @@
-
-
-import { useState } from "react";
+import React from "react";
 import { trpc } from "../utils/trpc";
 import useSWR from "swr";
 
@@ -21,4 +19,3 @@ const GreetingComponent = () => {
 };
 
 export default GreetingComponent;
-

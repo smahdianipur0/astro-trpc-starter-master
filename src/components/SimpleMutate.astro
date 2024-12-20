@@ -17,19 +17,19 @@ document.getElementById("comiunicate")!.addEventListener("input", (e) => {
     }
 });
 
-async function greetingFunc(name) {
+async function greetingFunc(name: string) {
     return await swr.noStaleMutate("greeting", () =>
         trpc.greetWithName.mutate({ names: name }),
     );
 };
 
-const greetingHandler = async (name) => {
-    document.getElementById("greetingMessage").textContent = "Loading...";
+const greetingHandler = async (name: string) => {
+    document.getElementById("greetingMessage")!.textContent = "Loading...";
     const [data, error] = await greetingFunc(name);
     if (data.message) {
-        document.getElementById("greetingMessage").textContent = data.message;
+        document.getElementById("greetingMessage")!.textContent = data.message;
     } else if (error) {
-        document.getElementById("greetingMessage").textContent = "Error loading greeting";
+        document.getElementById("greetingMessage")!.textContent = "Error loading greeting";
     }
 };
 

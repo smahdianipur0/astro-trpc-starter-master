@@ -24,8 +24,8 @@ export const appRouter = router({
 
     greeting: t.procedure
       .query(async () => {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return { bye: "Hello tRPC!!" };
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return { bye: "Hello tRPC!" };
       }),
 
 

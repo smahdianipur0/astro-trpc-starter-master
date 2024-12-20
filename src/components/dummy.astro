@@ -1,0 +1,14 @@
+<div id="dummy">Loading...</div>
+
+<script>
+import swr from "../utils/swr";
+
+const dummyFunc = () => swr.swrFetch("dummy", () => 
+  fetch('https://dummyapi.online/api/pokemon/2').then(res => res.json())
+);
+
+
+const [data, error] = await dummyFunc();
+document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message ?? "Unspected Eroor";
+
+</script>
