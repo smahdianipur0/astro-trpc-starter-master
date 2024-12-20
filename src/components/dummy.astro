@@ -12,9 +12,6 @@ const [dataSignal, errorSignal] = await swr.swrFetch("dummy", () =>
 // swr.cleanup("dummy"); 
 
 createEffect(() => {
-  const dummyElement = document.getElementById("dummy") as HTMLElement | null;
-  if (dummyElement) {
-    dummyElement.textContent = dataSignal()?.pokemon ?? errorSignal()?.message;
-  }
+    document.getElementById("dummy")!.textContent = dataSignal()?.pokemon ?? errorSignal()?.message;
 });
 </script>

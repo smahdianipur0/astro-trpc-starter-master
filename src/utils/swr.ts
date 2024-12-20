@@ -12,10 +12,10 @@ function createCacheHelperV2<Data>(_k: CacheKey) {
   const [get, set] = SWRConfig.defaultValue.cache ? createCacheHelper(SWRConfig.defaultValue.cache, key) : [];
 
   return { 
-    get cache() {
+    get cache(): Data | undefined {
       return localCache;
     },
-    setCache: (data: Data) => {
+    setCache: (data: Data): Data => {
       localCache = data;
       if (set) {
         set({ data });
@@ -64,7 +64,7 @@ const swr = {
     if (!this.cacheHelpers.has(key as string)) {
       this.cacheHelpers.set(key as string, createCacheHelperV2<Data>(key));
     }
-    const cacheHelper = this.cacheHelpers.get(key as string)!;
+    const cacheHelper = this.cacheHelpers.get(key as string) as ReturnType<typeof createCacheHelperV2<Data>>;
 
     const [dataSignal, setDataSignal] = createSignal<Data | undefined>(cacheHelper.cache);
     const [errorSignal, setErrorSignal] = createSignal<Error | undefined>(undefined);
