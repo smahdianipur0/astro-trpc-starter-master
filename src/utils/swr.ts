@@ -1,36 +1,12 @@
-import { type Arguments as CacheKey, serialize, createCacheHelper } from 'swr/_internal';  
-import { SWRConfig } from 'swr';  
-import { createSignal } from 'solid-js';  // Import createSignal from Solid
+import { type Arguments as CacheKey } from 'swr/_internal';
+import { FlatCache } from 'flat-cache';
 
-function createCacheHelperV2<Data>(_k: CacheKey) {
-  const [key] = serialize(_k);
-  if (!key  || typeof key !== 'string') {
-    throw Error('wrong key');
-  }
-
-  let localCache: Data | undefined;
-  const [get, set] = SWRConfig.defaultValue.cache ? createCacheHelper(SWRConfig.defaultValue.cache, key) : [];
-
-  return { 
-    get cache(): Data | undefined {
-      return localCache;
-    },
-    setCache: (data: Data): Data => {
-      localCache = data;
-      if (set) {
-        set({ data });
-      }
-      return data;
-    },
-  };
-} 
+const cache = new FlatCache();
 
 const swr = {
-
   requestControllers: new Map<string, AbortController>(),
   requestIds: new Map<string, number>(),
   cleanupFunctions: new Map<string, () => void>(),
-  cacheHelpers: new Map<string, ReturnType<typeof createCacheHelperV2>>(),
 
   async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>): Promise<[Data | undefined, Error | undefined]> {
     const requestId = (this.requestIds.get(key as string) || 0) + 1;
@@ -58,83 +34,63 @@ const swr = {
 
   async swrFetch<K extends CacheKey, Data>(
     key: K,
-    fetcher: (v: K) => Promise<Data>,
+    fetcher: (v: K, signal?: AbortSignal) => Promise<Data>,
     options: { autoRefresh?: boolean } = { autoRefresh: true }
-  ): Promise<[() => Data | undefined, () => Error | undefined]> {
-    if (!this.cacheHelpers.has(key as string)) {
-      this.cacheHelpers.set(key as string, createCacheHelperV2<Data>(key));
+  ): Promise<[Data | undefined, Error | undefined]> {
+    if (typeof key !== 'string') {
+      throw Error('wrong key');
     }
-    const cacheHelper = this.cacheHelpers.get(key as string) as ReturnType<typeof createCacheHelperV2<Data>>;
-
-    const [dataSignal, setDataSignal] = createSignal<Data | undefined>(cacheHelper.cache);
-    const [errorSignal, setErrorSignal] = createSignal<Error | undefined>(undefined);
-  
+    
     const requestId = (this.requestIds.get(key as string) || 0) + 1;
     this.requestIds.set(key as string, requestId);
   
+    if (this.requestControllers.has(key as string)) {
+      this.requestControllers.get(key as string)?.abort();
+    }
+    const controller = new AbortController();
+    this.requestControllers.set(key as string, controller);
+  
     const fetchWithTimeout = async (): Promise<Data> => 
       Promise.race([
-        fetcher(key),
+        fetcher(key as K, controller.signal),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Request timed out')), 10000)
         )
       ]);
   
-    const fetchAndUpdate = async (): Promise<void> => {
-      let lastError: Error | undefined;
-  
-      if (cacheHelper.cache !== undefined) {
-        setDataSignal(cacheHelper.cache);
-        setErrorSignal(undefined);
+    const fetchAndUpdate = async (): Promise<[Data | undefined, Error | undefined]> => {
+      const cachedData = cache.getKey<Data>(key);
+      if (cachedData !== undefined) {
+        return [cachedData, undefined];
       }
   
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const data = await fetchWithTimeout();
-          if (requestId === this.requestIds.get(key as string)) {
-            setDataSignal(data);
-            cacheHelper.setCache(data);
-            setErrorSignal(undefined);
-            return;
-          }
-        } catch (error) {
-          lastError = error as Error;
-  
-          if (cacheHelper.cache !== undefined) {
-            setDataSignal(cacheHelper.cache);
-            setErrorSignal(undefined);
-            
-            if (error instanceof Error && 
-                (error.message === 'Network request failed' || 
-                 error.message === 'Failed to fetch')) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              continue;
-            }
-          } else {
-            setErrorSignal(lastError);
-            setDataSignal(undefined);
-          }
-          
-          if (attempt === 2 || 
-              !(error instanceof Error && 
-                (error.message === 'Network request failed' || 
-                 error.message === 'Failed to fetch'))) {
-            return;
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        const fetchedData = await fetchWithTimeout();
+        if (requestId === this.requestIds.get(key)) {
+          cache.setKey(key, fetchedData);
+          return [fetchedData, undefined];
         }
+        return [undefined, undefined];
+      } catch (err) {
+        const cachedDataAfterError = cache.getKey<Data>(key as string);
+        if (cachedDataAfterError !== undefined) {
+          return [cachedDataAfterError, undefined];
+        }
+                
+        return [undefined, err as Error];
+      } finally {
+        this.requestControllers.delete(key as string);
       }
     };
   
-    fetchAndUpdate();
+    const result = await fetchAndUpdate();
 
     if (options.autoRefresh) {
-      const cleanup = this.onFocus(fetchAndUpdate);
-      this.cleanupFunctions.set(key as string, cleanup);
+      const cleanup = this.onFocus(() => fetchAndUpdate());
+      this.cleanupFunctions.set(key, cleanup);
     }
 
-    return [dataSignal, errorSignal];
+    return result;
   },
 
   onFocus(callback: () => void) {
@@ -163,8 +119,7 @@ const swr = {
       cleanupFunction();
       this.cleanupFunctions.delete(key);
     }
-    this.cacheHelpers.delete(key);
   }
-};  
+};
 
 export default swr;
