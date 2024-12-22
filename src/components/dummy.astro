@@ -1,17 +1,22 @@
 <div id="dummy">Loading...</div>
 
 <script>
-import { createEffect } from 'solid-js';
+
 import swr from "../utils/swr";
 
-const [dataSignal, errorSignal] = await swr.swrFetch("dummy", () => 
-  fetch('https://dummyapi.online/api/pokemon/4').then(res => res.json())
-);
+async function dummyGetter() {
+  return await swr.swrFetch("dummy", () => 
+  fetch('https://dummyapi.online/api/pokemon/5').then(res => res.json()))
+}
 
-// if needed
-// swr.cleanup("dummy"); 
+const[data, error] = await dummyGetter();
+document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
 
-createEffect(() => {
-    document.getElementById("dummy")!.textContent = dataSignal()?.pokemon ?? errorSignal()?.message;
+
+swr.revalidatListener(async() => {
+  const[data, error] = await dummyGetter();
+  document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
 });
+
+
 </script>

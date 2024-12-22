@@ -1,8 +1,12 @@
 import { trpc } from "../utils/trpc";  
 import swr from '../utils/swr.ts'; 
-import { createSignal } from "solid-js";
+import { createSignal, type Accessor } from "solid-js";
+
+
 
 const [name, setName] = createSignal("OldMate");
+
+type nameSignal = Accessor<string>;
 
 document.getElementById("comiunicate")!.addEventListener("input", (e) => {
     if ((e!.target as HTMLInputElement).matches("#inputNameTs")) {
@@ -11,19 +15,19 @@ document.getElementById("comiunicate")!.addEventListener("input", (e) => {
     }
 });
 
-async function greetingFunc(name) {
+async function greetingFunc(name: string) {
     return await swr.noStaleMutate("greeting", () =>
         trpc.greetWithName.mutate({ names: name }),
     );
 };
 
-const greetingHandler = async (name) => {
-    document.getElementById("greetingMessage").textContent = "Loading...";
+const greetingHandler = async (name: string) => {
+    document.getElementById("greetingMessage")!.textContent = "Loading...";
     const [data, error] = await greetingFunc(name);
-    if (data.message) {
-        document.getElementById("greetingMessage").textContent = data.message;
+    if (data?.message) {
+        document.getElementById("greetingMessage")!.textContent = data?.message;
     } else if (error) {
-        document.getElementById("greetingMessage").textContent = "Error loading greeting";
+        document.getElementById("greetingMessage")!.textContent = "Error loading greeting";
     }
 };
 

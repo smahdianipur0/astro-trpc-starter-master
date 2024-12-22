@@ -7,8 +7,8 @@ async function helloFunc() {
 
 const helloHandler = async () => {
     const [data, error] = await helloFunc();
-    if (data.bye) {
-    document.getElementById("byebye")!.textContent = data.bye;
+    if (data?.bye) {
+    document.getElementById("byebye")!.textContent = data?.bye;
     } else if (error) {
     document.getElementById("byebye")!.textContent = "Error loading greeting.";
     } 

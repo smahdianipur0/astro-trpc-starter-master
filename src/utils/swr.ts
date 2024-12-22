@@ -1,125 +1,97 @@
-import { type Arguments as CacheKey } from 'swr/_internal';
 import { FlatCache } from 'flat-cache';
+
+type ArgumentsTuple = readonly [any, ...unknown[]];
+type CacheKey = string | ArgumentsTuple | Record<any, any> | null | undefined | false;
 
 const cache = new FlatCache();
 
 const swr = {
-  requestControllers: new Map<string, AbortController>(),
-  requestIds: new Map<string, number>(),
-  cleanupFunctions: new Map<string, () => void>(),
+  requestAbortControllers: new Map<string, AbortController>(),
+  requestIdentifiers: new Map<string, number>(),
+  cleanupCallbacks: new Map<string, () => void>(),
 
   async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>): Promise<[Data | undefined, Error | undefined]> {
-    const requestId = (this.requestIds.get(key as string) || 0) + 1;
-    this.requestIds.set(key as string, requestId);
+    const currentRequestId = (this.requestIdentifiers.get(key as string) || 0) + 1;
+    this.requestIdentifiers.set(key as string, currentRequestId);
 
-    if (this.requestControllers.has(key as string)) {
-      this.requestControllers.get(key as string)?.abort();
+    if (this.requestAbortControllers.has(key as string)) {
+      this.requestAbortControllers.get(key as string)?.abort();
     }
-    const controller = new AbortController();
-    this.requestControllers.set(key as string, controller);
+    const abortController = new AbortController();
+    this.requestAbortControllers.set(key as string, abortController);
 
     try {
-      const res = await fetcher(key as K, controller.signal);
-      if (requestId === this.requestIds.get(key as string)) {
-        return [res, undefined];
+      const response = await fetcher(key as K, abortController.signal);
+      if (currentRequestId === this.requestIdentifiers.get(key as string)) {
+        return [response, undefined];
       } else {
         return [undefined, undefined];
       }
-    } catch (error) {
-      return [undefined, error] as [undefined, Error];
+    } catch (Error) {
+      return [undefined, Error] as [undefined, Error];
     } finally {
-      this.requestControllers.delete(key as string);
+      this.requestAbortControllers.delete(key as string);
     }
   },
 
-  async swrFetch<K extends CacheKey, Data>(
-    key: K,
-    fetcher: (v: K, signal?: AbortSignal) => Promise<Data>,
-    options: { autoRefresh?: boolean } = { autoRefresh: true }
-  ): Promise<[Data | undefined, Error | undefined]> {
-    if (typeof key !== 'string') {
-      throw Error('wrong key');
+  async swrFetch<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>, retryCount: number = 3): Promise<[Data | undefined, Error | undefined]> {
+    const currentRequestId = (this.requestIdentifiers.get(key as string) || 0) + 1;
+    this.requestIdentifiers.set(key as string, currentRequestId);
+
+    if (this.requestAbortControllers.has(key as string)) {
+      this.requestAbortControllers.get(key as string)?.abort();
     }
+    const abortController = new AbortController();
+    this.requestAbortControllers.set(key as string, abortController);
     
-    const requestId = (this.requestIds.get(key as string) || 0) + 1;
-    this.requestIds.set(key as string, requestId);
-  
-    if (this.requestControllers.has(key as string)) {
-      this.requestControllers.get(key as string)?.abort();
-    }
-    const controller = new AbortController();
-    this.requestControllers.set(key as string, controller);
-  
-    const fetchWithTimeout = async (): Promise<Data> => 
-      Promise.race([
-        fetcher(key as K, controller.signal),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Request timed out')), 10000)
-        )
-      ]);
-  
-    const fetchAndUpdate = async (): Promise<[Data | undefined, Error | undefined]> => {
-      const cachedData = cache.getKey<Data>(key);
-      if (cachedData !== undefined) {
-        return [cachedData, undefined];
-      }
-  
+    for (let attempt = 0; attempt <= retryCount; attempt++) {
+      console.log(`Attempt ${attempt + 1} of ${retryCount + 1}`);
+
+      if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+
       try {
-        const fetchedData = await fetchWithTimeout();
-        if (requestId === this.requestIds.get(key)) {
-          cache.setKey(key, fetchedData);
-          return [fetchedData, undefined];
+        const response = await fetcher(key as K, abortController.signal);
+        console.log(`Response received on attempt ${attempt + 1}:`, response);
+        if (currentRequestId === this.requestIdentifiers.get(key as string)) {
+          cache.set(key as string, response);
+          return [response, undefined];
+        } else {
+          return [undefined, undefined];
         }
-        return [undefined, undefined];
-      } catch (err) {
-        const cachedDataAfterError = cache.getKey<Data>(key as string);
-        if (cachedDataAfterError !== undefined) {
-          return [cachedDataAfterError, undefined];
-        }
-                
-        return [undefined, err as Error];
+      } catch (Error) {
+        const err = Error as Error;
+        console.log(`Error on attempt ${attempt + 1}:`, err);
+        switch (true) {
+          case err.message !== 'Failed to fetch':
+          case attempt === retryCount:
+            return cache.get(key as string) ? [cache.get(key as string), undefined] : [undefined, err] as [undefined, Error];
+       }
       } finally {
-        this.requestControllers.delete(key as string);
+        this.requestAbortControllers.delete(key as string);
       }
-    };
-  
-    const result = await fetchAndUpdate();
-
-    if (options.autoRefresh) {
-      const cleanup = this.onFocus(() => fetchAndUpdate());
-      this.cleanupFunctions.set(key, cleanup);
     }
-
-    return result;
   },
 
-  onFocus(callback: () => void) {
-    const visibilityHandler = () => {
-      if (document.visibilityState !== 'hidden') {
-        setTimeout(callback, 0);
+  revalidatListener: (revalidate: () => void) => {
+    const revalidationHandler = () => {
+      revalidate();
+    };
+
+    const visibilityChangeHandler = () => {
+      if (document.visibilityState === 'visible') {
+        revalidationHandler();
       }
     };
-    
-    const focusHandler = () => {
-      setTimeout(callback, 0);
-    };
-    
-    document.addEventListener('visibilitychange', visibilityHandler);
-    window.addEventListener('focus', focusHandler);
 
-    return () => {
-      document.removeEventListener('visibilitychange', visibilityHandler);
-      window.removeEventListener('focus', focusHandler);
+    const onlineHandler = () => {
+      revalidationHandler();
     };
-  },
 
-  cleanup(key: string) {
-    const cleanupFunction = this.cleanupFunctions.get(key);
-    if (cleanupFunction) {
-      cleanupFunction();
-      this.cleanupFunctions.delete(key);
-    }
+    document.addEventListener('visibilitychange', visibilityChangeHandler);
+    window.addEventListener('online', onlineHandler);
   }
 };
+
+
 
 export default swr;
