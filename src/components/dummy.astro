@@ -6,15 +6,20 @@ import swr from "../utils/swr";
 
 async function dummyGetter() {
   return await swr.swrFetch("dummy", () => 
-  fetch('https://dummyapi.online/api/pokemon/5').then(res => res.json()))
+  fetch('https://dummyapi.online/api/pokemon/7').then(res => res.json()))
 }
 
 const[data, error] = await dummyGetter();
-document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
+if ( data || error) {
+  document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
+}
+
 
 swr.revalidatListener(async() => {
   const[data, error] = await dummyGetter();
+  if ( data || error) {
   document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
+  }
 });
 
 

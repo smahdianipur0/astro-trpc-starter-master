@@ -1,7 +1,6 @@
 import { FlatCache } from 'flat-cache';
 
-type ArgumentsTuple = readonly [any, ...unknown[]];
-type CacheKey = string | ArgumentsTuple | Record<any, any> | null | undefined | false;
+type CacheKey = string
 
 const cache = new FlatCache();
 
@@ -73,7 +72,7 @@ const swr = {
         return cache.get(key as string) ? [cache.get(key as string), undefined] : [undefined, err] as [undefined, Error];
     };
 
-    return cache.get(key as string) ? [cache.get(key as string), undefined] ||(await fetchPromise()) : (await fetchPromise()) ;
+    return cache.get(key as string) ? [cache.get(key as string), undefined] || (await fetchPromise()) : (await fetchPromise()) ;
   },
 
   revalidatListener: (revalidate: () => void) => {

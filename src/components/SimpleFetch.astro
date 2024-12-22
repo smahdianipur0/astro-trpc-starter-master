@@ -4,17 +4,25 @@
 import { trpc } from "../utils/trpc";
 import swr from "../utils/swr";
 
-async function helloFunc() {
-  return await swr.swrFetch("hello", async () => trpc.greeting.query());
+
+async function helloGetter() {
+  return await swr.swrFetch("hello", () => 
+  trpc.greeting.query())
 }
 
-const [data, error] = await helloFunc();
 
-if (data && data.bye) {
-  document.getElementById("byebye")!.textContent = data.bye;
-} else if (error) {
-  document.getElementById("byebye")!.textContent = error.message;
-} 
+const[data, error] = await helloGetter();
+if ( data || error) {
+  document.getElementById("byebye")!.textContent = data?.bye ?? error?.message ?? "";
+}
+
+
+swr.revalidatListener(async() => {
+  const[data, error] = await helloGetter();
+  if ( data || error) {
+  document.getElementById("byebye")!.textContent = data?.bye ?? error?.message ?? "" ;
+  }
+});
 
 
 </script>
