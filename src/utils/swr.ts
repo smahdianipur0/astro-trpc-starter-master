@@ -44,14 +44,15 @@ const swr = {
     const abortController = new AbortController();
     this.requestAbortControllers.set(key as string, abortController);
     
-    for (let attempt = 0; attempt <= retryCount; attempt++) {
-      console.log(`Attempt ${attempt + 1} of ${retryCount + 1}`);
+    const fetchPromise = async (): Promise<[Data | undefined, Error | undefined]> => {
+      let err: Error | undefined = undefined;
 
-      if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      for (let attempt = 0; attempt <= retryCount; attempt++) {
+
+        if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
 
       try {
         const response = await fetcher(key as K, abortController.signal);
-        console.log(`Response received on attempt ${attempt + 1}:`, response);
         if (currentRequestId === this.requestIdentifiers.get(key as string)) {
           cache.set(key as string, response);
           return [response, undefined];
@@ -59,17 +60,20 @@ const swr = {
           return [undefined, undefined];
         }
       } catch (Error) {
-        const err = Error as Error;
-        console.log(`Error on attempt ${attempt + 1}:`, err);
+        err = Error as Error;
         switch (true) {
           case err.message !== 'Failed to fetch':
           case attempt === retryCount:
             return cache.get(key as string) ? [cache.get(key as string), undefined] : [undefined, err] as [undefined, Error];
-       }
-      } finally {
-        this.requestAbortControllers.delete(key as string);
+          } 
+        } finally {
+          this.requestAbortControllers.delete(key as string);
+        } 
       }
-    }
+        return cache.get(key as string) ? [cache.get(key as string), undefined] : [undefined, err] as [undefined, Error];
+    };
+
+    return cache.get(key as string) ? [cache.get(key as string), undefined] ||(await fetchPromise()) : (await fetchPromise()) ;
   },
 
   revalidatListener: (revalidate: () => void) => {

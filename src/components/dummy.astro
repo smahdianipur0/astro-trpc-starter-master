@@ -12,7 +12,6 @@ async function dummyGetter() {
 const[data, error] = await dummyGetter();
 document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
 
-
 swr.revalidatListener(async() => {
   const[data, error] = await dummyGetter();
   document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
