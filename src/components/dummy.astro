@@ -9,18 +9,17 @@ async function dummyGetter() {
   fetch('https://dummyapi.online/api/pokemon/7').then(res => res.json()))
 }
 
-const[data, error] = await dummyGetter();
-if ( data || error) {
-  document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
-}
-
-
-swr.revalidatListener(async() => {
-  const[data, error] = await dummyGetter();
+async function dummyHandler() {
+  const [data, error] = await dummyGetter();
   if ( data || error) {
   document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
   }
-});
+};
+
+await dummyHandler();
+swr.revalidatListener( async()=> { 
+  console.log("hi");
+  await dummyHandler()});
 
 
 </script>

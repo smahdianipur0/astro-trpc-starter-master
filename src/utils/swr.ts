@@ -9,7 +9,9 @@ const swr = {
   requestIdentifiers: new Map<string, number>(),
   cleanupCallbacks: new Map<string, () => void>(),
 
-  async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>): Promise<[Data | undefined, Error | undefined]> {
+  async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => 
+    Promise<Data>): Promise<[Data | undefined, Error | undefined]> {
+
     const currentRequestId = (this.requestIdentifiers.get(key as string) || 0) + 1;
     this.requestIdentifiers.set(key as string, currentRequestId);
 
@@ -33,7 +35,9 @@ const swr = {
     }
   },
 
-  async swrFetch<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => Promise<Data>, retryCount: number = 3): Promise<[Data | undefined, Error | undefined]> {
+  async swrFetch<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => 
+    Promise<Data>, retryCount: number = 2): Promise<[Data | undefined, Error | undefined]> {
+
     const currentRequestId = (this.requestIdentifiers.get(key as string) || 0) + 1;
     this.requestIdentifiers.set(key as string, currentRequestId);
 
@@ -50,21 +54,18 @@ const swr = {
 
         if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
 
-      try {
-        const response = await fetcher(key as K, abortController.signal);
-        if (currentRequestId === this.requestIdentifiers.get(key as string)) {
-          cache.set(key as string, response);
-          return [response, undefined];
-        } else {
-          return [undefined, undefined];
-        }
-      } catch (Error) {
-        err = Error as Error;
-        switch (true) {
-          case err.message !== 'Failed to fetch':
-          case attempt === retryCount:
-            return cache.get(key as string) ? [cache.get(key as string), undefined] : [undefined, err] as [undefined, Error];
-          } 
+        try {
+          const response = await fetcher(key as K, abortController.signal);
+          if (currentRequestId === this.requestIdentifiers.get(key as string)) {
+            cache.set(key as string, response);
+            return [response, undefined];
+          } else { 
+            return [undefined, undefined];
+          }
+        } catch (Error) {
+          err = Error as Error;
+          if (err.message !== 'Failed to fetch' || attempt === retryCount) { break }
+          
         } finally {
           this.requestAbortControllers.delete(key as string);
         } 
@@ -72,7 +73,7 @@ const swr = {
         return cache.get(key as string) ? [cache.get(key as string), undefined] : [undefined, err] as [undefined, Error];
     };
 
-    return cache.get(key as string) ? [cache.get(key as string), undefined] || (await fetchPromise()) : (await fetchPromise()) ;
+    return cache.get(key as string) ? (fetchPromise(),[cache.get(key as string), undefined]) || (await fetchPromise()) : (await fetchPromise()) ;
   },
 
   revalidatListener: (revalidate: () => void) => {
@@ -94,7 +95,5 @@ const swr = {
     window.addEventListener('online', onlineHandler);
   }
 };
-
-
 
 export default swr;
