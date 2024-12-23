@@ -17,9 +17,6 @@ async function dummyHandler() {
 };
 
 await dummyHandler();
-swr.revalidatListener( async()=> { 
-  console.log("hi");
-  await dummyHandler()});
-
+swr.revalidatListener( async()=> await dummyHandler());
 
 </script>

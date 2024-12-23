@@ -7,3 +7,64 @@ INSERT RELATION INTO ordered {
 };
 
 SELECT out.* FROM ordered WHERE in = person:01FVRH055G93BAZDEVNAJ9ZG3D ;
+
+
+// Simulated cache for example purposes  
+const cache: Map<string, string> = new Map<string, string>();  
+
+// Simulated async function for fetching data from an API  
+async function fetchDataFromAPI(key: string): Promise<[string | null, string | null]> {  
+    // Always attempt to fetch new data from the API  
+    try {  
+        // Simulate a fetch with a delay  
+        const response = await fetch('https://dummyapi.online/api/pokemon/7');  
+        if (!response.ok) {  
+            throw new Error('Network response was not ok');  
+        }  
+        const jsonData = await response.json();  
+        const data = jsonData.pokemon; // Assuming the structure has a 'pokemon' field  
+
+        // Update the cache with the new data  
+        cache.set(key, data);  
+        return [data, null]; // Return new data and no error  
+    } catch (err) {  
+        const error = err instanceof Error ? err.message : 'An unknown error occurred';  
+        return [null, error]; // Return no data and the error message  
+    }  
+}  
+
+// Main function to get data  
+async function dummyGetter() {  
+    const key = 'dummy';  
+
+    // Check for cached value  
+    const cachedValue = cache.get(key);  
+
+    // Always fetch from the API for revalidation  
+    const [fetchedData, error] = await fetchDataFromAPI(key);  
+
+    // Return cache and fetched data  
+    return { cachedValue, fetchedData, error };  
+}  
+
+// Handler function to update the UI  
+async function dummyHandler() {  
+    const { cachedValue, fetchedData, error } = await dummyGetter();  
+
+    // Update the UI with cached value immediately  
+    if (cachedValue) {  
+        document.getElementById('dummy')!.textContent = cachedValue;  
+    } else {  
+        document.getElementById('dummy')!.textContent = 'Loading...'; // Optional loading state  
+    }  
+
+    // After fetching, update the UI with fetched data or error  
+    if (fetchedData) {  
+        document.getElementById('dummy')!.textContent = fetchedData; // Update with fetched data  
+    } else if (error) {  
+        document.getElementById('dummy')!.textContent = error; // Update with error message  
+    }  
+}  
+
+// Call the handler function to execute the logic  
+dummyHandler();

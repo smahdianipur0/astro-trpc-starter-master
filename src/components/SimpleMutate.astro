@@ -18,7 +18,7 @@ document.getElementById("comiunicate")!.addEventListener("input", (e) => {
 });
 
 async function greetingFunc(name: string) {
-    return await swr.noStaleMutate("greeting", () =>
+    return await swr.swrFetch("greeting", () =>
         trpc.greetWithName.mutate({ names: name }),
     );
 };
@@ -27,7 +27,7 @@ async function greetingHandler (name: string)  {
     document.getElementById("greetingMessage")!.textContent = "Loading...";
     const [data, error] = await greetingFunc(name);
     if (data?.message || error?.message) {
-        document.getElementById("greetingMessage")!.textContent = data?.message ?? error?.message ?? '';
+        document.getElementById("greetingMessage")!.textContent = data?.message ?? error?.message ?? '8';
     } 
 };
 
