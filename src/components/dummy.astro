@@ -2,21 +2,27 @@
 
 <script>
 
-import swr from "../utils/swr";
-
-async function dummyGetter() {
-  return await swr.swrFetch("dummy", () => 
-  fetch('https://dummyapi.online/api/pokemon/7').then(res => res.json()))
-}
+import queryData, {cache} from '../utils/swr';
+type dummyRes = { pokemon: string; [key: string]: unknown };
 
 async function dummyHandler() {
-  const [data, error] = await dummyGetter();
-  if ( data || error) {
-  document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
+  const cached: dummyRes = cache.get("dummy");
+  if (cached?.pokemon){
+    document.getElementById("dummy")!.textContent = cached?.pokemon;
+  }
+
+  const [data, error] = await queryData.fetch("dummy", () => 
+    fetch('https://dummyapi.online/api/pokemon/7').then(res => res.json()));
+
+  if ( queryData.invalidateCache(cached, data, error)) {
+    document.getElementById("dummy")!.textContent = data?.pokemon ?? error?.message;
   }
 };
 
+const testing = "dummy"
+console.log(testing);
+
 await dummyHandler();
-swr.revalidatListener( async()=> await dummyHandler());
+queryData.revalidatListener( async()=> await dummyHandler());
 
 </script>

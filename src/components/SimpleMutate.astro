@@ -5,7 +5,7 @@
 <script>
 
 import { trpc } from "../utils/trpc";  
-import swr from '../utils/swr'; 
+import queryData from '../utils/swr'; 
 import { createSignal } from "solid-js";
 
 const [name, setName] = createSignal("OldMate");
@@ -18,7 +18,7 @@ document.getElementById("comiunicate")!.addEventListener("input", (e) => {
 });
 
 async function greetingFunc(name: string) {
-    return await swr.swrFetch("greeting", () =>
+    return await queryData.mutate("greeting", () =>
         trpc.greetWithName.mutate({ names: name }),
     );
 };

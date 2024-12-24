@@ -2,14 +2,14 @@ import { FlatCache } from 'flat-cache';
 
 type CacheKey = string
 
-const cache = new FlatCache();
+export const cache = new FlatCache();
 
-const swr = {
+const queryData = {
   requestAbortControllers: new Map<string, AbortController>(),
   requestIdentifiers: new Map<string, number>(),
   cleanupCallbacks: new Map<string, () => void>(),
 
-  async noStaleMutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => 
+  async mutate<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => 
     Promise<Data>): Promise<[Data | undefined, Error | undefined]> {
 
     const currentRequestId = (this.requestIdentifiers.get(key as string) || 0) + 1;
@@ -35,7 +35,7 @@ const swr = {
     }
   },
 
-  async swrFetch<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => 
+  async fetch<K extends CacheKey, Data>(key: K, fetcher: (v: K, signal?: AbortSignal) => 
     Promise<Data>, retryCount: number = 2): Promise<[Data | undefined, Error | undefined]> {
 
     const currentRequestId = (this.requestIdentifiers.get(key as string) || 0) + 1;
@@ -47,33 +47,29 @@ const swr = {
     const abortController = new AbortController();
     this.requestAbortControllers.set(key as string, abortController);
     
-    const fetchPromise = async (): Promise<[Data | undefined, Error | undefined]> => {
-      let err: Error | undefined = undefined;
+    let err: Error | undefined = undefined;
 
-      for (let attempt = 0; attempt <= retryCount; attempt++) {
+    for (let attempt = 0; attempt <= retryCount; attempt++) {
 
-        if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
 
-        try {
-          const response = await fetcher(key as K, abortController.signal);
-          if (currentRequestId === this.requestIdentifiers.get(key as string)) {
-            cache.set(key as string, response);
-            return [response, undefined];
-          } else { 
-            return [undefined, undefined];
-          }
-        } catch (Error) {
-          err = Error as Error;
-          if (err.message !== 'Failed to fetch' || attempt === retryCount) { break }
-          
-        } finally {
-          this.requestAbortControllers.delete(key as string);
-        } 
-      }
-        return cache.get(key as string) ? [cache.get(key as string), undefined] : [undefined, err] as [undefined, Error];
-    };
-
-    return cache.get(key as string) ? (fetchPromise(),[cache.get(key as string), undefined]) || (await fetchPromise()) : (await fetchPromise()) ;
+      try {
+        const response = await fetcher(key as K, abortController.signal);
+        if (currentRequestId === this.requestIdentifiers.get(key as string)) {
+          cache.set(key as string, response);
+          return [response, undefined];
+        } else { 
+          return [undefined, undefined];
+        }
+      } catch (Error) {
+        err = Error as Error;
+        if (err.message !== 'Failed to fetch' || attempt === retryCount) { break }
+        
+      } finally {
+        this.requestAbortControllers.delete(key as string);
+      } 
+    }
+    return [undefined, err] ;
   },
 
   revalidatListener: (revalidate: () => void) => {
@@ -93,7 +89,15 @@ const swr = {
 
     document.addEventListener('visibilitychange', visibilityChangeHandler);
     window.addEventListener('online', onlineHandler);
+  },
+
+  invalidateCache(cached: object | undefined, data: object | undefined, error: Error | undefined): boolean {
+    return (JSON.stringify(cached) !== JSON.stringify(data) &&
+    data !== undefined && 
+    cached !== undefined ) || 
+    (cached === undefined && data !== error);
   }
+
 };
 
-export default swr;
+export default queryData;

@@ -2,21 +2,28 @@
 
 <script>
 import { trpc } from "../utils/trpc";
-import swr from "../utils/swr";
+import queryData, {cache} from '../utils/swr';
+type helloRes = { message: string; [key: string]: unknown };
 
 async function helloGetter() {
-  return await swr.swrFetch("hello", () => 
+  return await queryData.fetch("hello", () => 
   trpc.greeting.query())
 }
 
 async function helloHandler() {
-  const[data, error] = await helloGetter();
-  if ( data || error) {
-  document.getElementById("byebye")!.textContent = data?.bye ?? error?.message ?? "";
+  const cached: helloRes = cache.get("hello");
+  if (cached?.message){
+    document.getElementById("byebye")!.textContent = cached?.message;
+  }
+
+  const [data, error] = await helloGetter();
+  if ( queryData.invalidateCache(cached, data, error)) {
+    document.getElementById("byebye")!.textContent = data?.message ?? error?.message ?? "";
   }
 }
 
+
 await helloHandler();
-swr.revalidatListener(async() => await helloHandler());
+queryData.revalidatListener(async() => await helloHandler());
 
 </script>
